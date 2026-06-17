@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>TR Time Reconstruction β-Matrix Generator for Arbitrary History Points</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Simple Styles -->
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif; margin: 24px; line-height: 1.5; }
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .row { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 900px) { .row { grid-template-columns: 1fr 1fr; } }
+    input[type="text"], input[type="number"] {
+      width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;
+    }
+    label { font-weight: 600; }
+    button {
+      background: #111827; color: white; padding: 10px 16px; border: 0; border-radius: 10px; cursor: pointer;
+    }
+    pre { background: #f8fafc; padding: 12px; border-radius: 10px; overflow: auto; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .muted { color: #6b7280; font-size: 12px; }
+  </style>
+  <!-- MathJax for LaTeX rendering -->
+  <script>
+    window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }, svg: { fontCache: 'global' } };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+
+  <h1>TR Time Reconstruction β-Matrix Generator for Arbitrary History Points</h1>
+  <p class="muted">
+    Description: Given $h_0$ (the next time step) and the historical intervals $h_1,\dots,h_N$, construct nodes 
+    $t_0=0, t_k=-\sum_{i=1}^k h_i$, build the Lagrange basis $L_i(t)$, and compute
+    $$
+      B_{ij}=\sum_{l=1}^{\ell_{\max}}\int_0^{h_0} h_0^{2l-1}\,L_i^{(l)}(t)\,L_j^{(l)}(t)\,dt.
+    $$
+    Also compute the derivative mapping matrix $D$, which satisfies 
+    $v^{(m)}(t_n)=\sum_k D_{m,k} v(t_{n-k})$.
+  </p>
+
+  <form method="post" class="card">
+    <div class="row">
+      <div>
+        <label>Next time step $h_0$ (symbolic or numeric)</label>
+        <input type="text" name="h0" value="{{ request.form.get('h0', default_h0) }}">
+        <div class="muted">Example: <code>h0</code> or <code>2.0</code></div>
+      </div>
+      <div>
+        <label>History interval list $h_1,\dots,h_N$ (comma-separated)</label>
+        <input type="text" name="h_list" value="{{ request.form.get('h_list', default_h_list) }}">
+        <div class="muted">Example: <code>h1,h2,h3</code> or <code>2,2</code></div>
+      </div>
+      <div>
+        <label>Number of history points $N$ (= number of intervals)</label>
+        <input type="number" min="1" name="n_history" value="{{ request.form.get('n_history', default_n) }}">
+      </div>
+      <div>
+        <label>Maximum derivative order $\ell_{\max}$ (leave blank = N)</label>
+        <input type="number" min="1" name="lmax" value="{{ request.form.get('lmax', default_lmax) }}">
+      </div>
+      <div>
+        <label>Highest derivative order of $D$ matrix $M$ (leave blank = N)</label>
+        <input type="number" min="0" name="m_deriv" value="{{ request.form.get('m_deriv', default_m) }}">
+      </div>
+    </div>
+    <br>
+    <button type="submit">Compute</button>
+  </form>
+
+  {% if error %}
+  <div class="card" style="border-color:#fca5a5;">
+    <strong>Error:</strong> {{ error }}
+  </div>
+  {% endif %}
+
+  {% if result %}
+    <div class="card">
+      <h2>Inputs and Nodes</h2>
+      <p>Parameters:
+        \( h_0 = {{ result.h0 | safe }} \),
+        \( (h_1,\dots,h_{{ result.N }}) = (\,
+          {% for h in result.h_list %}{{ h | safe }}{% if not loop.last %},\ {% endif %}{% endfor %}
+        \,) \)
+      </p>
+      <p>Nodes (from current to historical):</p>
+      <p>
+        $
+        \{\,{% for x in result.nodes %}{{ x | safe }}{% if not loop.last %},\ {% endif %}{% endfor %}\,\}
+        $
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Lagrange Basis $L_i(t)$</h2>
+      <ol>
+        {% for Li in result.L %}
+          <li> \( L_{{ loop.index0 }}(t) = {{ sp.latex(Li) | safe }} \) </li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    <div class="card">
+      <h2>Integral Matrices \(I^{(l)}\) (\(l=1,\dots,{{ result.lmax }}\))</h2>
+      {% for I in result.I_list %}
+        <p>\( I^{({{ loop.index }})} = {{ sp.latex(I) | safe }} \)</p>
+      {% endfor %}
+    </div>
+
+          <div class="card">
+      <h2>Quadratic Form Matrix \(B=\sum_{l=1}^{\ell_{\max}} I^{(l)}\)</h2>
+
+      <p><strong>LaTeX:</strong> \( B = {{ sp.latex(result.B) | safe }} \)</p>
+
+      <p><strong>C++ (copy-paste):</strong></p>
+      <pre><code>{{ result.cpp_B | e }}</code></pre>
+    </div>
+
+
+
+          <div class="card">
+      <h2>Derivative Mapping Matrix \(D\) (rows \(m=0..{{ result.M }}\), columns correspond to \(t_n,t_{n-1},\dots\))</h2>
+
+      <p><strong>LaTeX:</strong> \( D = {{ sp.latex(result.D) | safe }} \)</p>
+
+      <p><strong>C++ (copy-paste):</strong></p>
+      <pre><code>{{ result.cpp_D | e }}</code></pre>
+
+      <p class="muted">
+        Usage: If \( \mathbf{v} = [\,v(t_n), v(t_{n-1}), \dots, v(t_{n-{{ result.N }}})\,]^T \),
+        then \( [\,v^{(0)}(t_n),\dots,v^{({{ result.M }})}(t_n)\,]^T = D\,\mathbf{v} \).
+      </p>
+    </div>
+
+
+  {% endif %}
+
+  <div class="card">
+    <h2>Tips</h2>
+    <ul>
+      <li>Supports both symbolic (e.g. <code>h0, h1, h2</code>) and numeric (e.g. <code>0.5, 0.2</code>) inputs.</li>
+      <li>\(\ell_{\max}\) is usually equal to the number of history points \(N\). To reproduce your original code’s \(l=1,2\), set \(\ell_{\max}=2\).</li>
+      <li>For large \(N\), symbolic integration may be slow — test with numeric values first.</li>
+    </ul>
+  </div>
+
+</body>
+</html>

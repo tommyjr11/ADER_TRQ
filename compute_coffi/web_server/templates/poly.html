@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Polynomial Reconstruction | WENO Tools</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body { background: #f8fafc; }
+      .card { border: none; box-shadow: 0 6px 12px rgba(0,0,0,.08); }
+    </style>
+  </head>
+  <body>
+    <main class="container py-5">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <div class="card rounded-4 p-4">
+            <h1 class="mb-4 text-center">Cell-Average Reconstruction</h1>
+
+            <form method="post" class="row g-3">
+              <div class="col-sm-4">
+                <label for="r" class="form-label">
+                  Small Stencil size&nbsp;<code>r</code> (degree&nbsp;<code>r−1</code>)
+                </label>
+                <input
+                  type="number" min="2" class="form-control"
+                  id="r" name="r" value="{{ r }}" required
+                />
+              </div>
+
+              <div class="col-sm-8">
+                <label for="eval_x" class="form-label"><code>eval_x</code></label>
+                <input
+                  type="text" class="form-control"
+                  id="eval_x" name="eval_x"
+                  value="{{ eval_x }}" placeholder="e.g. 1/2 + sqrt(3/5)/2"
+                  required
+                />
+              </div>
+
+              <div class="col-12 text-center">
+                <button class="btn btn-primary px-5 mt-2" type="submit">
+                  Compute
+                </button>
+              </div>
+            </form>
+
+            {% if results %}
+            <hr />
+              {% if results.error %}
+                <div class="alert alert-danger">{{ results.error }}</div>
+              {% else %}
+                <h5 class="mt-3">Polynomial value &amp; derivatives&nbsp;at&nbsp;<code>x = {{ eval_x }}</code></h5>
+                <ul class="list-group list-group-flush">
+                  {% for name, expr in results.items() %}
+                    <li class="list-group-item"><code>{{ name }} = {{ expr }}</code></li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+            {% endif %}
+          </div>
+
+          <p class="text-center mt-4">
+            Uses SymPy &mdash; feel free to enter expressions (fractions, <code>sqrt()</code>, π, …).
+            
+          </p>
+          <p class="text-center mt-4">
+            eval_x refers to the mapped position within the local stencil; for example, in WENO-5 reconstruction at the right interface, the cell averages are labeled from left to right as 5, 4, 3, 2, 1 in decreasing order of proximity to the interface.
+          </p>
+          <p class="text-center">
+            <a href="{{ url_for('index') }}">← back to WENO Optimal weights</a>
+          </p>
+          <div class="overflow-x-auto mt-8">
+            <table class="table-auto mx-auto border-collapse">
+              <thead>
+                <tr>
+                  <th class="border px-4 py-2">n&nbsp;(points)</th>
+                  <th class="border px-4 py-2">&#958<sub>i</sub> (eval_x = 1/2 + 1/2 * &#958<sub>i</sub>)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="border px-4 py-2 text-center">1</td>
+                  <td class="border px-4 py-2 text-center">0</td>
+                </tr>
+                <tr>
+                  <td class="border px-4 py-2 text-center">2</td>
+                  <td class="border px-4 py-2 text-center">&plusmn;1/&#8730;3</td>
+                </tr>
+                <tr>
+                  <td class="border px-4 py-2 text-center">3</td>
+                  <td class="border px-4 py-2 text-center">&minus;&#8730;(3/5), 0, &#8730;(3/5)</td>
+                </tr>
+                <tr>
+                  <td class="border px-4 py-2 text-center">4</td>
+                  <td class="border px-4 py-2 text-center">&plusmn;&#8730;((3+2&#8730;(6/5))/7), &plusmn;&#8730;((3-2&#8730;(6/5))/7)</td>
+                </tr>
+                <tr>
+                  <td class="border px-4 py-2 text-center">5</td>
+                  <td class="border px-4 py-2 text-center">&minus;&#8730;((5+2&#8730;(10/7))/3), &minus;&#8730;((5-2&#8730;(10/7))/3), 0, &#8730;((5-2&#8730;(10/7))/3), &#8730;((5+2&#8730;(10/7))/3)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+        </div>
+      </div>
+    </main>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+    </script>
+  </body>
+</html>

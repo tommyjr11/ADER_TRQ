@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>WENO Weight Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Bootstrap 5 CDN -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: #f8fafc;
+      }
+      .card {
+        border: none;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+      }
+      footer {
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container py-5">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <div class="card rounded-4 p-4">
+            <h1 class="mb-4 text-center">WENO Optimal Weight Calculator</h1>
+
+            <!-- Input form -->
+            <form method="post" class="row g-3">
+              <div class="col-sm-4">
+                <label class="form-label" for="r">Small Stencil size&nbsp;<code>r</code></label>
+                <input
+                  type="number"
+                  min="2"
+                  class="form-control"
+                  id="r"
+                  name="r"
+                  value="{{ r }}"
+                  required
+                />
+              </div>
+              <div class="col-sm-8">
+                <label class="form-label" for="eval_x"><code>eval_x</code></label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="eval_x"
+                  name="eval_x"
+                  value="{{ eval_x }}"
+                  placeholder="e.g. 1/2 + sqrt(3/5)/2"
+                  required
+                />
+              </div>
+              <div class="col-12 text-center">
+                <button type="submit" class="btn btn-primary px-5 mt-2">
+                  Compute
+                </button>
+              </div>
+            </form>
+
+            <!-- Results -->
+            {% if weights %}
+            <hr />
+            {% if weights.error %}
+              <div class="alert alert-danger">{{ weights.error }}</div>
+            {% else %}
+            <h5 class="mt-3">Weights:</h5>
+            <ul class="list-group list-group-flush">
+              {% for k, v in weights.items() %}
+                <li class="list-group-item">
+                  <code>{{ k }} = {{ v }}</code>
+                </li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+            {% endif %}
+          </div>
+          <footer class="text-muted text-center mt-4">
+            <p class="mb-0">
+              Powered by SymPy &mdash; you can enter expressions such as
+              <code>sqrt()</code>, fractions, and more.
+
+            </p>
+        </br>
+            <p class="mb-0">
+                Eval_x refers to a point mapped onto the reference cell [0,1], where 0 corresponds to the left boundary and 1 to the right; it can also be set to any Gaussian quadrature point within this interval.
+            </p>
+            
+            <p class="text-center">
+            <a href="/poly">Forward to WENO Reconstruction coefficient →</a>
+            <div class="overflow-x-auto mt-8">
+            <table class="table-auto mx-auto border-collapse">
+              <thead>
+                <tr>
+                  <th class="border px-4 py-2">n&nbsp;(points)</th>
+                  <th class="border px-4 py-2">&#958<sub>i</sub> (eval_x = 1/2 + 1/2 * &#958<sub>i</sub>)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="border px-4 py-2 text-center">1</td>
+                  <td class="border px-4 py-2 text-center">0</td>
+                </tr>
+                <tr>
+                  <td class="border px-4 py-2 text-center">2</td>
+                  <td class="border px-4 py-2 text-center">&plusmn;1/&#8730;3</td>
+                </tr>
+                <tr>
+                  <td class="border px-4 py-2 text-center">3</td>
+                  <td class="border px-4 py-2 text-center">&minus;&#8730;(3/5), 0, &#8730;(3/5)</td>
+                </tr>
+                <tr>
+                  <td class="border px-4 py-2 text-center">4</td>
+                  <td class="border px-4 py-2 text-center">&plusmn;&#8730;((3+2&#8730;(6/5))/7), &plusmn;&#8730;((3-2&#8730;(6/5))/7)</td>
+                </tr>
+                <tr>
+                  <td class="border px-4 py-2 text-center">5</td>
+                  <td class="border px-4 py-2 text-center">&minus;&#8730;((5+2&#8730;(10/7))/3), &minus;&#8730;((5-2&#8730;(10/7))/3), 0, &#8730;((5-2&#8730;(10/7))/3), &#8730;((5+2&#8730;(10/7))/3)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          </p>
+          </footer>
+        </div>
+      </div>
+    </main>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    ></script>
+  </body>
+</html>
